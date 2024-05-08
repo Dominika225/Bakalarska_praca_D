@@ -1,42 +1,47 @@
-import socket
-import json
-from HttpRequestCl import HttpRequest
-# import Arguments_C from Arguments_C
-
-HOST = "127.0.0.1"
-PORT = 65433
-# TIMEOUT = 10
-# MESSAGE_SIZE = 1024  # Maximálna veľkosť správy pre recv
+from Http.HttpRequest import HttpRequest
+from Http.HttpResponse import HttpResponse
+from Http.HttpClient import HttpClient
+from Logger.LoggerFactory import LoggerFactory
+from Arguments import Arguments
+import time
 
 
 if __name__ == "__main__":
+    # vytvorim si logger
+    logger = LoggerFactory.create_logger(__name__)
+    
+    # vyextrahujem argumenty a ulozim si ich do args
+    args = Arguments.parse_arguments()
 
-    if HOST == "::1":
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)  # vytvorim objekt typu SOSCKET
-    else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # s.settimeout(TIMEOUT)
-    user_data = HttpRequest(host="120", endpoint="/kti", method="GET")
-    serialized_user_data = json.dumps(user_data)
+    # vytvorim http clienta - instancia tiedy
+    http_client = HttpClient(arguments=args)
+        
+    # vytvorim http request s parametrami h,endp,m,b
+    http_request = HttpRequest(
+        host=http_client.get_host(),
+        endpoint=args.endpoint,
+        method=args.method,
+        body=args.body)
 
     try:
-        s.connect((HOST, PORT))  # pripojim sa na server
-        s.sendall(str(len(serialized_user_data)).encode('utf-8'))
+        # zaznamenam si zaciatok
+        start_time = time.time()
+        # otvaram pripojenie na server a posielam/prijimam spravu
+        http_client.open_connection(args.host, args.port)
 
-        if len(user_data) == 0:  # ak nezadam nic a stlacim iba enter, vtedy je problem preto sa namiesto prazdneho STRINGU posle "exit" aby server vedel ze chcem prerusit spojenie
-            user_data = "exit"
-        s.sendall(user_data.encode(
-            'utf-8'))  # poslem zakodovane data, nemozem poslat cisto STRING, je to potreba premenit na BYTE
+        for _ in range(args.repeat):
+            # odosielam HTTP poziadavku
+            http_client.send_message(http_request)
+            # prijimanie odpovede
+            http_response: HttpResponse = http_client.receive_message()
+        # zaznamenam si koniec
 
-        data = s.recv(1024)  # cakam na prichadzajuce data
-
-        print('DATA uncensored:', data)
-        length = data.decode()
-        print('Dlzka incoming spravy:', length)
-        data = s.recv(int(length))  # cakam na prichadzajuce data
-        print('Odpoved od servera:', data.decode())
-
-
+            logger.debug(f'HTTP \'{args.method}\' request on \'{args.endpoint}\' elapsed {time.time() - start_time} seconds.')
+            logger.debug(f'HTTP response: {http_response["http_code"]} Message: {http_response["body"]}')
+        end_time = time.time()
+        logger.info(f"Total elapsed time for {args.repeat} requests: {end_time - start_time} seconds")
+    except Exception as e:
+        logger.error(f"Communication failed due to: {e}")
     finally:
-        s.close()  # Ujistím sa, že socket je vždy zatvorený
+        # Ujistim sa, že socket je vzdy zatvoreny
+        http_client.close_connection()
