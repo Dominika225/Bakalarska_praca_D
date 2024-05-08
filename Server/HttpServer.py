@@ -1,15 +1,41 @@
-from HttpRequest import HttpRequest
-from HttpResponse import HttpResponse
+from Http.HttpRequest import HttpRequest
+from Http.HttpResponse import HttpResponse
 import time
-import socket
 import json
 
-@classmethod
-class HttpServer():
-    @staticmethod
-    def handleRequest(request, sock):
-        response = HttpResponse()
 
+class HttpServer():
+        
+    def handle_request(self, request: HttpRequest):
+        response = HttpResponse(accept="json/application+json", host="host-ip-todo", body=None, http_code="200")
+
+        # https://peps.python.org/pep-0636/
+
+        match request["method"]:
+            case "GET":
+                match request["endpoint"]:
+                    case "/":
+                        # urob nieco
+                        response.body = '{Here´s your data KTI}'
+                        response.http_code = "200"
+                        pass
+                    case "/data":
+                        # vrat data
+                        response.body = '{Here is your data: Test report KTI.}'
+                        response.http_code = "200"
+                        pass
+            
+            case "POST":
+                match request["endpoint"]:
+                    case "/data":
+                        # nastav data
+                        response.body = '{Here your data for POST: Test report KTI}'
+                        response.http_code = "201"
+                        pass
+            
+        return response
+
+"""
         if request.method == "GET" and request.endpoint == "/":
             # nieco urobim
             time.sleep(3)
@@ -31,11 +57,5 @@ class HttpServer():
             print(response.http_code)
             json_error = json.dumps(errormessage)
 
-
-        response_data = response.body.encode('utf-8')
-        sock.sendall(str(len(response_data)).encode('utf-8') + b'\n')
-        sock.sendall(response_data) # posielanie dat
-        # posielanie dat klientovi, ktore su zakodovane do typu
-        # utf-8
         return response
-
+"""
