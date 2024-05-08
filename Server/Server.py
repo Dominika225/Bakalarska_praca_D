@@ -1,23 +1,21 @@
-import argparse
-import socket
-import TCP
-                                                # from LoggerFactory import LoggerFactory
-                                                   # import logging
-
-HOST = TCP.TCPServer.host
-PORT = TCP.TCPServer.post
-
-
+from Http.HttpServer import HttpServer
+from TCPServer import TCPServer
+from Arguments import Arguments
+from UDP_S import UDPServer
 
 if __name__ == "__main__":
-    #logger = LoggerFactory.get_logger()
-    #logger.debug('This message should go to the log file')
-    # logger.info('So should this')
-    #logger.warning('And this, too')
-    #logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
-    # logger.critical('Critical message from the moon')
 
-    print(f'port {TCP.TCPServer}.')
-    tcp_server = TCP(HOST,PORT)  # vytvorim objekt, teda nas server
-    tcp_server.server_configuration()  # nastavim ho na spravnu IP a PORT
-    #tcp_server.waiting_for_client()  # zacnem cakat na pripojenie klienta
+    # extrahujem argumenty
+    args = Arguments.parse_arguments()
+    
+    if args.protocol == 'TCP':
+        http_server = TCPServer(args.host, args.port, max_data_recv=args.max_data, ip_version=args.ip_version,
+                                max_clients=args.max_clients)
+    else:
+        htt_server = UDPServer(args.host, args.port, max_data_recv=args.max_data, ip_version=args.ip_version)
+                                # max_clients=args.max_clients)
+    
+    try:
+        http_server.waiting_for_client()
+    except:
+        print("Something is not right!!!")
