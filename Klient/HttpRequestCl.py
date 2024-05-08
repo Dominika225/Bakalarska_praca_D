@@ -1,7 +1,18 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class HttpRequest:
-  def __init__(self, method, endpoint, host, body, protocol = "HTTP/1.1",):
-    self.method = method
-    self.endpoint = endpoint
-    self.protocol = protocol
-    self.host = host
-    self.body = body
+    method: str
+    endpoint: str
+    host: str
+    body: str
+    protocol: str = "HTTP/1.1"
+    
+    def encoder_request(request):
+        if isinstance(request, HttpRequest):
+            return {'method': request.method,
+                    'endpoint': request.endpoint,
+                    'host': request.host,
+                    'body': request.body,
+                    'protocol': request.protocol}
